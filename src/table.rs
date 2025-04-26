@@ -3,7 +3,7 @@ use super::sats::SatsField;
 use super::sym;
 use super::util::{check_duplicate, check_duplicate_msg, match_meta};
 use core::slice;
-use heck::ToSnakeCase;
+use ident_case::RenameRule;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::meta::ParseNestedMeta;
@@ -82,7 +82,7 @@ impl TableArgs {
         })
         .parse2(input)?;
         let name: Ident = name.ok_or_else(|| {
-            let table = item.ident.to_string().to_snake_case();
+            let table = RenameRule::SnakeCase.apply_to_field(item.ident.to_string());
             syn::Error::new(
                 Span::call_site(),
                 format_args!("must specify table name, e.g. `#[spacetimedb::table(name = {table})]"),

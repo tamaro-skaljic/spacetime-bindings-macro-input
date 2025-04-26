@@ -13,7 +13,8 @@ readme = "README.md"
 rust-version = "1.84.0"
 
 [dependencies]
-heck = "0.4"
+# https://crates.io/crates/ident_case Utility for applying case rules to Rust identifiers.
+ident_case = "1.0.1"
 
 # https://crates.io/crates/proc_macro2 A substitute implementation of the compiler's `proc_macro` API to decouple token-based libraries from the procedural macro use case.
 proc-macro2 = "1.0"
