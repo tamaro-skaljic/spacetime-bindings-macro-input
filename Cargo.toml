@@ -24,3 +24,6 @@ syn = { version = "2" }
 
 # https://crates.io/crates/quote Quasi-quoting macro quote!(...)
 quote = "1.0.8"
+
+[workspace]
+members = ["example"]

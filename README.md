@@ -8,6 +8,10 @@ This crate was originally created as part of a refactoring by a community member
 
 However, it was rejected because the macro code had not been sufficiently tested and it was therefore not possible to be sure that the PR would not lead to errors.
 
+## Usage
+
+See the [example project](example/src/lib.rs).
+
 ## License
 
 This crate and it's source code is licensed under the same license as SpacetimeDB, see [LICENSE](LICENSE).
