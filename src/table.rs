@@ -42,7 +42,11 @@ impl IndexArg {
         // We don't know if its unique yet.
         // We'll discover this once we have collected constraints.
         let is_unique = false;
-        Self { name, is_unique, kind }
+        Self {
+            name,
+            is_unique,
+            kind,
+        }
     }
 }
 
@@ -85,7 +89,9 @@ impl TableArgs {
             let table = RenameRule::SnakeCase.apply_to_field(item.ident.to_string());
             syn::Error::new(
                 Span::call_site(),
-                format_args!("must specify table name, e.g. `#[spacetimedb::table(name = {table})]"),
+                format_args!(
+                    "must specify table name, e.g. `#[spacetimedb::table(name = {table})]"
+                ),
             )
         })?;
 
@@ -121,7 +127,9 @@ impl ScheduledArg {
         })?;
 
         let reducer = reducer.ok_or_else(|| {
-            meta.error("must specify scheduled reducer associated with the table: scheduled(reducer_name)")
+            meta.error(
+                "must specify scheduled reducer associated with the table: scheduled(reducer_name)",
+            )
         })?;
         Ok(Self { span, reducer, at })
     }
@@ -175,8 +183,9 @@ impl IndexArg {
             });
             Ok(())
         })?;
-        let columns = columns
-            .ok_or_else(|| meta.error("must specify columns for btree index, e.g. `btree(columns = [col1, col2])`"))?;
+        let columns = columns.ok_or_else(|| {
+            meta.error("must specify columns for btree index, e.g. `btree(columns = [col1, col2])`")
+        })?;
         Ok(IndexType::BTree { columns })
     }
 
@@ -194,8 +203,9 @@ impl IndexArg {
             });
             Ok(())
         })?;
-        let column = column
-            .ok_or_else(|| meta.error("must specify the column for direct index, e.g. `direct(column = col1)`"))?;
+        let column = column.ok_or_else(|| {
+            meta.error("must specify the column for direct index, e.g. `direct(column = col1)`")
+        })?;
         Ok(IndexType::Direct { column })
     }
 
@@ -212,13 +222,19 @@ impl IndexArg {
                 }
                 sym::direct => {
                     check_duplicate_msg(&kind, &meta, "index type specified twice")?;
-                    kind = Some(IndexType::Direct { column: field.clone() })
+                    kind = Some(IndexType::Direct {
+                        column: field.clone(),
+                    })
                 }
             });
             Ok(())
         })?;
-        let kind = kind
-            .ok_or_else(|| syn::Error::new_spanned(&attr.meta, "must specify kind of index (`btree` or `direct`)"))?;
+        let kind = kind.ok_or_else(|| {
+            syn::Error::new_spanned(
+                &attr.meta,
+                "must specify kind of index (`btree` or `direct`)",
+            )
+        })?;
         let name = field.clone();
         Ok(IndexArg::new(name, kind))
     }
@@ -234,13 +250,19 @@ pub struct ColumnArgs<'a> {
 }
 
 impl<'a> ColumnArgs<'a> {
-    pub fn parse(mut table: TableArgs, item: &'a syn::DeriveInput) -> syn::Result<(TableArgs, Self)> {
+    pub fn parse(
+        mut table: TableArgs,
+        item: &'a syn::DeriveInput,
+    ) -> syn::Result<(TableArgs, Self)> {
         let sats_ty = sats::sats_type_from_derive(item, quote!(spacetimedb::spacetimedb_lib))?;
 
         let original_struct_name = sats_ty.ident.clone();
 
         let sats::SatsTypeData::Product(fields) = &sats_ty.data else {
-            return Err(syn::Error::new(Span::call_site(), "spacetimedb table must be a struct"));
+            return Err(syn::Error::new(
+                Span::call_site(),
+                "spacetimedb table must be a struct",
+            ));
         };
 
         if fields.len() > u16::MAX.into() {
@@ -262,6 +284,8 @@ impl<'a> ColumnArgs<'a> {
             let mut unique = None;
             let mut auto_inc = None;
             let mut primary_key = None;
+            let mut default_value = None;
+
             for attr in field.original_attrs {
                 let Some(attr) = ColumnAttr::parse(attr, field_ident)? else {
                     continue;
@@ -280,6 +304,10 @@ impl<'a> ColumnArgs<'a> {
                         primary_key = Some(span);
                     }
                     ColumnAttr::Index(index_arg) => table.indices.push(index_arg),
+                    ColumnAttr::Default(expr, span) => {
+                        check_duplicate(&default_value, span)?;
+                        default_value = Some(expr);
+                    }
                 }
             }
 
@@ -288,20 +316,25 @@ impl<'a> ColumnArgs<'a> {
                 ident: field_ident,
                 vis: field.vis,
                 ty: field.ty,
+                default_value,
             };
 
             if unique.is_some() || primary_key.is_some() {
-                unique_columns.push(column);
+                unique_columns.push(column.clone());
             }
             if auto_inc.is_some() {
-                sequenced_columns.push(column);
+                sequenced_columns.push(column.clone());
             }
             if let Some(span) = primary_key {
-                check_duplicate_msg(&primary_key_column, span, "can only have one primary key per table")?;
-                primary_key_column = Some(column);
+                check_duplicate_msg(
+                    &primary_key_column,
+                    span,
+                    "can only have one primary key per table",
+                )?;
+                primary_key_column = Some(column.clone());
             }
 
-            columns.push(column);
+            columns.push(column.clone());
         }
 
         // Mark all indices with a single column matching a unique constraint as unique.
@@ -343,12 +376,13 @@ impl<'a> ColumnArgs<'a> {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct Column<'a> {
     pub index: u16,
     pub vis: &'a syn::Visibility,
     pub ident: &'a syn::Ident,
     pub ty: &'a syn::Type,
+    pub default_value: Option<syn::Expr>,
 }
 
 pub enum ColumnAttr {
@@ -356,6 +390,7 @@ pub enum ColumnAttr {
     AutoInc(Span),
     PrimaryKey(Span),
     Index(IndexArg),
+    Default(syn::Expr, Span),
 }
 
 impl ColumnAttr {
@@ -375,6 +410,11 @@ impl ColumnAttr {
         } else if ident == sym::primary_key {
             attr.meta.require_path_only()?;
             Some(ColumnAttr::PrimaryKey(ident.span()))
+        } else if ident == sym::default {
+            Some(ColumnAttr::Default(
+                attr.parse_args::<syn::Expr>()?,
+                ident.span(),
+            ))
         } else {
             None
         })
