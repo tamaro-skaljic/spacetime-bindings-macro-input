@@ -1,6 +1,6 @@
 [package]
 name = "spacetime-bindings-macro-input"
-version = "1.1.1"
+version = "1.6.0"
 edition = "2021"
 description = "Unofficial Input Crate for the SpacetimeDB Macro Bindings."
 documentation = "https://docs.rs/spacetime-bindings-macro-input"
@@ -17,13 +17,13 @@ rust-version = "1.84.0"
 ident_case = "1.0.1"
 
 # https://crates.io/crates/proc_macro2 A substitute implementation of the compiler's `proc_macro` API to decouple token-based libraries from the procedural macro use case.
-proc-macro2 = "1.0"
+proc-macro2 = "1"
 
 # https://crates.io/crates/syn Parser for Rust source code
 syn = { version = "2" }
 
 # https://crates.io/crates/quote Quasi-quoting macro quote!(...)
-quote = "1.0.8"
+quote = "1"
 
 [workspace]
 members = ["example"]

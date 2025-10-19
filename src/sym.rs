@@ -21,6 +21,7 @@ symbol!(btree);
 symbol!(column);
 symbol!(columns);
 symbol!(crate_, crate);
+symbol!(default);
 symbol!(direct);
 symbol!(index);
 symbol!(name);
