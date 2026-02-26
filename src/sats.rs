@@ -73,9 +73,17 @@ pub fn sats_type_from_derive(
             });
             SatsTypeData::Sum(variants.collect::<syn::Result<Vec<_>>>()?)
         }
-        syn::Data::Union(u) => return Err(syn::Error::new(u.union_token.span, "unions not supported")),
+        syn::Data::Union(u) => {
+            return Err(syn::Error::new(u.union_token.span, "unions not supported"));
+        }
     };
-    extract_sats_type(&input.ident, &input.generics, &input.attrs, data, crate_fallback)
+    extract_sats_type(
+        &input.ident,
+        &input.generics,
+        &input.attrs,
+        data,
+        crate_fallback,
+    )
 }
 
 fn is_repr_c(attrs: &[syn::Attribute]) -> bool {
@@ -143,13 +151,13 @@ fn variant_data(variant: &syn::Variant) -> syn::Result<Option<(syn::Member, &syn
             return Err(syn::Error::new_spanned(
                 &variant.fields,
                 "must be a unit variant or a newtype variant",
-            ))
+            ));
         }
         syn::Fields::Unnamed(f) if f.unnamed.len() != 1 => {
             return Err(syn::Error::new_spanned(
                 &variant.fields,
                 "must be a unit variant or a newtype variant",
-            ))
+            ));
         }
         syn::Fields::Unnamed(f) => &f.unnamed[0],
         syn::Fields::Unit => return Ok(None),

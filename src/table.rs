@@ -16,8 +16,9 @@ use syn::{Ident, Path, Token};
 pub struct TableArgs {
     pub access: Option<TableAccess>,
     pub scheduled: Option<ScheduledArg>,
-    pub name: Ident,
+    pub accessor: Ident,
     pub indices: Vec<IndexArg>,
+    pub event: Option<()>,
 }
 
 pub enum TableAccess {
@@ -27,23 +28,23 @@ pub enum TableAccess {
 
 pub struct ScheduledArg {
     pub span: Span,
-    pub reducer: Path,
+    pub reducer_or_procedure: Path,
     pub at: Option<Ident>,
 }
 
 pub struct IndexArg {
-    pub name: Ident,
+    pub accessor: Ident,
     pub is_unique: bool,
     pub kind: IndexType,
 }
 
 impl IndexArg {
-    fn new(name: Ident, kind: IndexType) -> Self {
+    fn new(accessor: Ident, kind: IndexType) -> Self {
         // We don't know if its unique yet.
         // We'll discover this once we have collected constraints.
         let is_unique = false;
         Self {
-            name,
+            accessor,
             is_unique,
             kind,
         }
@@ -52,6 +53,7 @@ impl IndexArg {
 
 pub enum IndexType {
     BTree { columns: Vec<Ident> },
+    Hash { columns: Vec<Ident> },
     Direct { column: Ident },
 }
 
@@ -59,8 +61,10 @@ impl TableArgs {
     pub fn parse(input: TokenStream, item: &syn::DeriveInput) -> syn::Result<Self> {
         let mut access = None;
         let mut scheduled = None;
-        let mut name = None;
+        let mut accessor = None;
         let mut indices = Vec::new();
+        let mut event = None;
+
         syn::meta::parser(|meta| {
             match_meta!(match meta {
                 sym::public => {
@@ -71,26 +75,31 @@ impl TableArgs {
                     check_duplicate_msg(&access, &meta, "already specified access level")?;
                     access = Some(TableAccess::Private(meta.path.span()));
                 }
-                sym::name => {
-                    check_duplicate(&name, &meta)?;
+                sym::name => {}
+                sym::accessor => {
+                    check_duplicate(&accessor, &meta)?;
                     let value = meta.value()?;
-                    name = Some(value.parse()?);
+                    accessor = Some(value.parse()?);
                 }
                 sym::index => indices.push(IndexArg::parse_meta(meta)?),
                 sym::scheduled => {
                     check_duplicate(&scheduled, &meta)?;
                     scheduled = Some(ScheduledArg::parse_meta(meta)?);
                 }
+                sym::event => {
+                    check_duplicate(&event, &meta)?;
+                    event = Some(());
+                }
             });
             Ok(())
         })
         .parse2(input)?;
-        let name: Ident = name.ok_or_else(|| {
+        let accessor: Ident = accessor.ok_or_else(|| {
             let table = RenameRule::SnakeCase.apply_to_field(item.ident.to_string());
             syn::Error::new(
                 Span::call_site(),
                 format_args!(
-                    "must specify table name, e.g. `#[spacetimedb::table(name = {table})]"
+                    "must specify table accessor, e.g. `#[spacetimedb::table(accessor = {table})]"
                 ),
             )
         })?;
@@ -98,8 +107,9 @@ impl TableArgs {
         Ok(TableArgs {
             access,
             scheduled,
-            name,
+            accessor,
             indices,
+            event,
         })
     }
 }
@@ -107,7 +117,7 @@ impl TableArgs {
 impl ScheduledArg {
     fn parse_meta(meta: ParseNestedMeta) -> syn::Result<Self> {
         let span = meta.path.span();
-        let mut reducer = None;
+        let mut reducer_or_procedure = None;
         let mut at = None;
 
         meta.parse_nested_meta(|meta| {
@@ -120,35 +130,48 @@ impl ScheduledArg {
                     }
                 })
             } else {
-                check_duplicate_msg(&reducer, &meta, "can only specify one scheduled reducer")?;
-                reducer = Some(meta.path);
+                check_duplicate_msg(
+                    &reducer_or_procedure,
+                    &meta,
+                    "can only specify one scheduled reducer or procedure",
+                )?;
+                reducer_or_procedure = Some(meta.path);
             }
             Ok(())
         })?;
 
-        let reducer = reducer.ok_or_else(|| {
+        let reducer_or_procedure = reducer_or_procedure.ok_or_else(|| {
             meta.error(
-                "must specify scheduled reducer associated with the table: scheduled(reducer_name)",
+                "must specify scheduled reducer or procedure associated with the table: scheduled(function_name)",
             )
         })?;
-        Ok(Self { span, reducer, at })
+        Ok(Self {
+            span,
+            reducer_or_procedure,
+            at,
+        })
     }
 }
 
 impl IndexArg {
     fn parse_meta(meta: ParseNestedMeta) -> syn::Result<Self> {
-        let mut name = None;
+        let mut accessor = None;
         let mut algo = None;
 
         meta.parse_nested_meta(|meta| {
             match_meta!(match meta {
-                sym::name => {
-                    check_duplicate(&name, &meta)?;
-                    name = Some(meta.value()?.parse()?);
+                sym::name => {}
+                sym::accessor => {
+                    check_duplicate(&accessor, &meta)?;
+                    accessor = Some(meta.value()?.parse()?);
                 }
                 sym::btree => {
                     check_duplicate_msg(&algo, &meta, "index algorithm specified twice")?;
                     algo = Some(Self::parse_btree(meta)?);
+                }
+                sym::hash => {
+                    check_duplicate_msg(&algo, &meta, "index algorithm specified twice")?;
+                    algo = Some(Self::parse_hash(meta)?);
                 }
                 sym::direct => {
                     check_duplicate_msg(&algo, &meta, "index algorithm specified twice")?;
@@ -157,15 +180,16 @@ impl IndexArg {
             });
             Ok(())
         })?;
-        let name = name.ok_or_else(|| meta.error("missing index name, e.g. name = my_index"))?;
+        let accessor = accessor
+            .ok_or_else(|| meta.error("missing index accessor, e.g. accessor = my_index"))?;
         let kind = algo.ok_or_else(|| {
-            meta.error("missing index algorithm, e.g., `btree(columns = [col1, col2])` or `direct(column = col1)`")
+            meta.error("missing index algorithm, e.g., `btree(columns = [col1, col2])`, `hash(columns = [col1, col2])` or `direct(column = col1)`")
         })?;
 
-        Ok(IndexArg::new(name, kind))
+        Ok(IndexArg::new(accessor, kind))
     }
 
-    fn parse_btree(meta: ParseNestedMeta) -> syn::Result<IndexType> {
+    fn parse_columns(meta: &ParseNestedMeta) -> syn::Result<Option<Vec<Ident>>> {
         let mut columns = None;
         meta.parse_nested_meta(|meta| {
             match_meta!(match meta {
@@ -183,10 +207,23 @@ impl IndexArg {
             });
             Ok(())
         })?;
+        Ok(columns)
+    }
+
+    fn parse_btree(meta: ParseNestedMeta) -> syn::Result<IndexType> {
+        let columns = Self::parse_columns(&meta)?;
         let columns = columns.ok_or_else(|| {
             meta.error("must specify columns for btree index, e.g. `btree(columns = [col1, col2])`")
         })?;
         Ok(IndexType::BTree { columns })
+    }
+
+    fn parse_hash(meta: ParseNestedMeta) -> syn::Result<IndexType> {
+        let columns = Self::parse_columns(&meta)?;
+        let columns = columns.ok_or_else(|| {
+            meta.error("must specify columns for hash index, e.g. `hash(columns = [col1, col2])`")
+        })?;
+        Ok(IndexType::Hash { columns })
     }
 
     fn parse_direct(meta: ParseNestedMeta) -> syn::Result<IndexType> {
@@ -209,7 +246,7 @@ impl IndexArg {
         Ok(IndexType::Direct { column })
     }
 
-    /// Parses an inline `#[index(btree)]` or `#[index(direct)]` attribute on a field.
+    /// Parses an inline `#[index(btree)]`, `#[index(hash)]` or `#[index(direct)]` attribute on a field.
     fn parse_index_attr(field: &Ident, attr: &syn::Attribute) -> syn::Result<Self> {
         let mut kind = None;
         attr.parse_nested_meta(|meta| {
@@ -217,6 +254,12 @@ impl IndexArg {
                 sym::btree => {
                     check_duplicate_msg(&kind, &meta, "index type specified twice")?;
                     kind = Some(IndexType::BTree {
+                        columns: vec![field.clone()],
+                    });
+                }
+                sym::hash => {
+                    check_duplicate_msg(&kind, &meta, "index type specified twice")?;
+                    kind = Some(IndexType::Hash {
                         columns: vec![field.clone()],
                     });
                 }
@@ -232,11 +275,11 @@ impl IndexArg {
         let kind = kind.ok_or_else(|| {
             syn::Error::new_spanned(
                 &attr.meta,
-                "must specify kind of index (`btree` or `direct`)",
+                "must specify kind of index (`btree`, `hash` or `direct`)",
             )
         })?;
-        let name = field.clone();
-        Ok(IndexArg::new(name, kind))
+        let accessor = field.clone();
+        Ok(IndexArg::new(accessor, kind))
     }
 }
 
@@ -343,6 +386,7 @@ impl<'a> ColumnArgs<'a> {
             if table.indices.iter_mut().any(|index| {
                 let covered_by_index = match &index.kind {
                     IndexType::BTree { columns } => &*columns == slice::from_ref(unique_col.ident),
+                    IndexType::Hash { columns } => &*columns == slice::from_ref(unique_col.ident),
                     IndexType::Direct { column } => column == unique_col.ident,
                 };
                 index.is_unique |= covered_by_index;
@@ -353,10 +397,10 @@ impl<'a> ColumnArgs<'a> {
             // NOTE(centril): We pick `btree` here if the user does not specify otherwise,
             // as it's the safest choice of index for the general case,
             // even if isn't optimal in specific cases.
-            let name = unique_col.ident.clone();
-            let columns = vec![name.clone()];
+            let accessor = unique_col.ident.clone();
+            let columns = vec![accessor.clone()];
             table.indices.push(IndexArg {
-                name,
+                accessor,
                 is_unique: true,
                 kind: IndexType::BTree { columns },
             })
