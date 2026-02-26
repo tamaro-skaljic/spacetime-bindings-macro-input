@@ -5,23 +5,11 @@ edition = "2024"
 publish = false
 
 [lib]
-proc-macro = true
+crate-type = ["cdylib"]
 
 [dependencies]
-# https://crates.io/crates/ident_case Utility for applying case rules to Rust identifiers.
-ident_case = "1.0.1"
-
-# https://crates.io/crates/proc_macro2 A substitute implementation of the compiler's `proc_macro` API to decouple token-based libraries from the procedural macro use case.
-proc-macro2 = "1.0"
-
-# https://crates.io/crates/syn Parser for Rust source code
-syn = { version = "2.0" }
-
-# https://crates.io/crates/quote Quasi-quoting macro quote!(...)
-quote = "1.0"
-
 # https://crates.io/crates/spacetimedb Easy support for interacting between SpacetimeDB and Rust.
 spacetimedb = "2.0.1"
 
-# https://crates.io/crates/spacetime-bindings-macro-input Unofficial Input Crate for the SpacetimeDB Macro Bindings.
-spacetime-bindings-macro-input = { version = "2.0.1", path = "../" }
+# https://crates.io/crates/spacetime-bindings-macro-input-example-macros Proc-macro crate for the example.
+spacetime-bindings-macro-input-example-macros = { version = "2.0.1", path = "macros" }

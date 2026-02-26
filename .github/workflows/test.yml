@@ -84,13 +84,13 @@ jobs:
           sleep 2
 
           echo "Building and publishing a module using SpacetimeDB..."
-          spacetime publish spacetimedb-bindings-macro-input --yes || echo "Publish failed"
+          spacetime publish --server local test --yes || echo "Publish failed"
 
           echo "Showing logs..."
-          spacetime logs spacetimedb-bindings-macro-input --yes || echo "Logs failed"
+          spacetime logs --server local test --yes || echo "Logs failed"
 
           echo "Cleaning up module..."
-          spacetime delete spacetimedb-bindings-macro-input --yes || echo "Delete failed"
+          spacetime delete --server local test --yes || echo "Delete failed"
 
       - name: Check code formatting
         run: |

@@ -1,9 +1,15 @@
 #/bin/sh
 
-rustup target add x86_64-unknown-linux-gnu x86_64-unknown-linux-musl
-
 cargo fmt --all -- --check
 cargo clippy --all-targets --all-features || echo "Clippy warnings"
 
-cargo build --release --target x86_64-unknown-linux-gnu
-cargo build --release --target x86_64-unknown-linux-musl
+cd example
+
+echo "Building and publishing a module using SpacetimeDB..."
+spacetime publish --server local --delete-data=always spacetime-bindings-macro-input --yes || echo "Publish failed"
+
+echo "Showing logs..."
+spacetime logs --server local spacetime-bindings-macro-input --yes || echo "Logs failed"
+
+echo "Cleaning up module..."
+spacetime delete --server local spacetime-bindings-macro-input --yes || echo "Delete failed"
