@@ -8,6 +8,20 @@ This crate was originally created as part of a refactoring by a community member
 
 However, it was rejected because the macro code had not been sufficiently tested and it was therefore not possible to be sure that the PR would not lead to errors.
 
+## Migration
+
+If you want to migrate this crate to a newer version of SpacetimeDB, you can follow these steps:
+
+- Delete the content of the [`original/bindings-macro`](original/bindings-macro) directory.
+
+- Download the [`bindings-macro` crate directory](https://github.com/clockworklabs/SpacetimeDB/tree/master/crates/bindings-macro) from the SpacetimeDB repository.
+
+- Move the downloaded `bindings-macro` directory to the `original` directory.
+
+- Have a look into the git diff to see what has changed. Determine whether the changes are relevant and should be migrated to the `src` directory of this crate. If so, migrate the changes to the `src` directory.
+
+- Push your changes to a new branch and create a pull request. A merge of the changes into the main branch of this repository will trigger a new release of this crate.
+
 ## Usage
 
 See the [example project](example/src/lib.rs).

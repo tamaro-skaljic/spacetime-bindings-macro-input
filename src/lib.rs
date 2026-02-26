@@ -8,7 +8,7 @@
 //
 // (private documentation for the macro authors is totally fine here and you SHOULD write that!)
 
-pub mod table;
-pub mod util;
 pub mod sats;
 pub mod sym;
+pub mod table;
+pub mod util;

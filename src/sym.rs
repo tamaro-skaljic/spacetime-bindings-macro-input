@@ -15,6 +15,7 @@ macro_rules! symbol {
 }
 pub use symbol;
 
+symbol!(accessor);
 symbol!(at);
 symbol!(auto_inc);
 symbol!(btree);
@@ -23,6 +24,8 @@ symbol!(columns);
 symbol!(crate_, crate);
 symbol!(default);
 symbol!(direct);
+symbol!(event);
+symbol!(hash);
 symbol!(index);
 symbol!(name);
 symbol!(primary_key);
