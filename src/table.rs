@@ -385,8 +385,8 @@ impl<'a> ColumnArgs<'a> {
         for unique_col in &unique_columns {
             if table.indices.iter_mut().any(|index| {
                 let covered_by_index = match &index.kind {
-                    IndexType::BTree { columns } => &*columns == slice::from_ref(unique_col.ident),
-                    IndexType::Hash { columns } => &*columns == slice::from_ref(unique_col.ident),
+                    IndexType::BTree { columns } => columns == slice::from_ref(unique_col.ident),
+                    IndexType::Hash { columns } => columns == slice::from_ref(unique_col.ident),
                     IndexType::Direct { column } => column == unique_col.ident,
                 };
                 index.is_unique |= covered_by_index;
