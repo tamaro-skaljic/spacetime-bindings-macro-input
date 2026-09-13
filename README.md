@@ -1,4 +1,4 @@
-# Unofficial Input Crate for the [SpacetimeDB](https://spacetimedb.com/) Rust Macro Bindings
+# Input Crate for the [SpacetimeDB](https://spacetimedb.com/) Rust Macro Bindings (Unofficial)
 
 This crate can be used if you want to develop your own [rust macros](https://doc.rust-lang.org/book/ch20-05-macros.html) on top of SpacetimeDB. It contains the parsing logic of the [spacetimedb-bindings-macro](https://github.com/clockworklabs/SpacetimeDB/tree/master/crates/bindings-macro) crate and therefore allows you to create your own logic based on the same input that SpacetimeDB itself receives when compiling the project.
 
