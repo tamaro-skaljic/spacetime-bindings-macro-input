@@ -1,7 +1,5 @@
 @echo off
 
-rustup target add x86_64-unknown-linux-gnu x86_64-unknown-linux-musl
-
 cargo fmt --all -- --check
 cargo clippy --all-targets --all-features
 
