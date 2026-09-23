@@ -1,6 +1,6 @@
 [package]
 name = "spacetime-bindings-macro-input-example"
-version = "2.0.1"
+version = "2.10.1"
 edition = "2024"
 publish = false
 
@@ -8,8 +8,6 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-# https://crates.io/crates/spacetimedb Easy support for interacting between SpacetimeDB and Rust.
-spacetimedb = "2.0.1"
+spacetime-bindings-macro-input-example-macros.workspace = true
 
-# https://crates.io/crates/spacetime-bindings-macro-input-example-macros Proc-macro crate for the example.
-spacetime-bindings-macro-input-example-macros = { version = "2.0.1", path = "macros" }
+spacetimedb.workspace = true
