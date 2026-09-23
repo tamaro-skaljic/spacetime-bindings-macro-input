@@ -558,7 +558,7 @@ checksum = "ba467056f1b547ed52077911161fc86985becbc60e8e1857c8a144dab0def891"
 
 [[package]]
 name = "spacetime-bindings-macro-input"
-version = "2.0.1"
+version = "2.10.1"
 dependencies = [
  "ident_case",
  "proc-macro2",
@@ -568,7 +568,7 @@ dependencies = [
 
 [[package]]
 name = "spacetime-bindings-macro-input-example"
-version = "2.0.1"
+version = "2.10.1"
 dependencies = [
  "spacetime-bindings-macro-input-example-macros",
  "spacetimedb",
@@ -576,7 +576,7 @@ dependencies = [
 
 [[package]]
 name = "spacetime-bindings-macro-input-example-macros"
-version = "2.0.1"
+version = "2.10.1"
 dependencies = [
  "ident_case",
  "proc-macro2",

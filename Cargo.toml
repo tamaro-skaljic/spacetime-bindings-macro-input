@@ -1,6 +1,6 @@
 [package]
 name = "spacetime-bindings-macro-input"
-version = "2.0.1"
+version = "2.10.1"
 edition = "2024"
 description = "Unofficial Input Crate for the SpacetimeDB Macro Bindings."
 documentation = "https://docs.rs/spacetime-bindings-macro-input"

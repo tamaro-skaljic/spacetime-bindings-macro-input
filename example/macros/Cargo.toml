@@ -1,6 +1,6 @@
 [package]
 name = "spacetime-bindings-macro-input-example-macros"
-version = "2.0.1"
+version = "2.10.1"
 edition = "2024"
 publish = false
 
