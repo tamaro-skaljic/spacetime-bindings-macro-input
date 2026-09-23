@@ -24,19 +24,19 @@ spacetime-bindings-macro-input = { path = "." }
 spacetime-bindings-macro-input-example-macros = { path = "example/macros" }
 
 # https://crates.io/crates/ident_case Utility for applying case rules to Rust identifiers.
-ident_case = "1.0.1"
+ident_case =  "1"
 
 # https://crates.io/crates/proc_macro2 A substitute implementation of the compiler's `proc_macro` API to decouple token-based libraries from the procedural macro use case.
-proc-macro2 = "1"
+proc-macro2 =  "1"
 
 # https://crates.io/crates/syn Parser for Rust source code
-syn = { version = "2" }
+syn =  "3"
 
 # https://crates.io/crates/quote Quasi-quoting macro quote!(...)
-quote = "1"
+quote =  "1"
 
 # https://crates.io/crates/spacetimedb Easy support for interacting between SpacetimeDB and Rust.
-spacetimedb = "2.10.1"
+spacetimedb = "=2.10.1"
 
 [workspace]
 members = ["example", "example/macros"]
