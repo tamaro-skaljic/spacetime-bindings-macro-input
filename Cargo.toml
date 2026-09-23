@@ -36,7 +36,7 @@ syn = { version = "2" }
 quote = "1"
 
 # https://crates.io/crates/spacetimedb Easy support for interacting between SpacetimeDB and Rust.
-spacetimedb = "2.0.1"
+spacetimedb = "2.10.1"
 
 [workspace]
 members = ["example", "example/macros"]
